@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
