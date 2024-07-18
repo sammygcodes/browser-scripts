@@ -13,12 +13,22 @@
 (function() {
     'use strict';
 
+    const hotkeys = [
+        { key: 1, action: function() { switchCam(1) } },
+        { key: 2, action: function() { switchCam(2) } },
+        { key: 3, action: function() { switchCam(3) } },
+        { key: 4, action: function() { switchCam(4) } },
+        { key: 5, action: function() { switchCam(5) } }
+    ]
+
     // force switch to quad cam on page load
     const autoQuadCam = true
     // hide chat and video thumbs on fullscreen
     const fullscreenVideoOnly = true
     // reload the page when an error is encountered
     const reloadOnError = true
+    // enable hotkeys
+    const enableHotkeys = true
     // autostart video when page is loaded
     const forcePlay = true
     // delay before reloading the page on an error (secs * ms)
@@ -41,6 +51,15 @@
     if (localStorage.getItem('bblf_video_monitor_attempts')) attempts = (resetScript) ? 0 : parseInt(localStorage.getItem('bblf_video_monitor_attempts'))
 
     setInterval(checkVideo, monitorInterval)
+
+    if (enableHotkeys) {
+        document.onkeydown = function(e) {
+            for (var i = 0; i < hotkeys.length; i++) {
+                const hotkey = hotkeys[i].key.toString()
+                if (e.key === hotkey || e.code === hotkey) hotkeys[i].action()
+            }
+        }
+    }
 
     function checkVideo() {
         if (fullscreenVideoOnly && !fsButtonMapped) {
@@ -100,14 +119,9 @@
                         }
                     } else {
                         if (autoQuadCam && camNum == 1) {
-                            const el = document.querySelector('.multi-cam-plugin-thumb-player-container .index-item[data-camid="5"]')
-                            if (el) {
-                                log('switching to quad cam')
-                                el.click()
-                                camNum = 5
-                            } else {
-                                warn('could not find quad cam element, unable to update')
-                            }
+                            log('switching to quad cam')
+                            switchCam(5)
+                            camNum = 5
                         } else {
                             log('video is ready and playing.')
                         }
@@ -121,8 +135,18 @@
             }
         }
     }
-    function log(msg) { console.log('BBLF Video Monitor: (' + attempts + ') ' + msg) }
-    function warn(msg) { console.warn('BBLF Video Monitor: (' + attempts + ') ' + msg) }
-    function error(msg) { console.error('BBLF Video Monitor: (' + attempts + ') ' + msg) }
-    function info(msg) { console.info('BBLF Video Monitor: (' + attempts + ') ' + msg) }
+
+    function switchCam(num) {
+        const el = document.querySelector('.multi-cam-plugin-thumb-player-container .index-item[data-camid="' + num + '"]')
+        if (el) {
+            el.click()
+        } else {
+            warn('could not find camera element ' + num + ', unable to change')
+        }
+    }
+
+    function log(msg) { console.log('BBLF Enhancer: (' + attempts + ') ' + msg) }
+    function warn(msg) { console.warn('BBLF Enhancer: (' + attempts + ') ' + msg) }
+    function error(msg) { console.error('BBLF Enhancer: (' + attempts + ') ' + msg) }
+    function info(msg) { console.info('BBLF Enhancer: (' + attempts + ') ' + msg) }
 })();
