@@ -1,0 +1,50 @@
+/* hide header/footer */
+header, footer {
+  display: none;
+}
+
+/* adjust container for thumb cams and date/time */
+/* make bottom -8em to show just camera labels, or use display: none to hide it */
+.skin-multi-cam-plugin {
+  display: none !important;
+  width: 420px;
+  height: 160px !important;
+  min-height: unset !important;
+  position: fixed;
+  top: unset !important;
+  right: 1em !important;
+  bottom: -8em !important;
+  left: unset !important;
+}
+
+/* full video */
+#mcplayer, .aa-player-skin {
+  position: fixed !important;
+  margin: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* hide chat */
+.skin-multi-cam-plugin-sub-sections-elements {
+  display: none;
+}
+
+/* hide disclaimer */
+.disclaimer {
+  display: none !important;
+}
+
+/* hide overlays */
+.metadata-manager, .skin-metadata-manager-content, .rating-manager, .product-placement-manager, .controls-backplane, .skip-button-wrapper, .controls-brand-logo-wrapper, .controls-manager, .gate-manager, .ad-info-manager, .tool-tip-manager, .modal-manager, .top-menu-backplane, .top-menu-manager {
+  /* display: none; */
+}
+
+/* Might need to deal with a live timeout manager */
+/* .live-timeout-manager {} */
+
+[data-role="adContainer"], [data-role="adClickEl"] {
+  display: none;
+}
