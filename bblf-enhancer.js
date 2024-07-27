@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=paramountplus.com
 // @grant        GM_log
+
+// 1.2
+//  - add extendedWatch
 
 // ==/UserScript==
 
@@ -27,6 +30,8 @@
     const fullscreenVideoOnly = true
     // reload the page when an error is encountered
     const reloadOnError = true
+    // keep watching if still watching is shown
+    const extendedWatch = true
     // enable hotkeys
     const enableHotkeys = true
     // autostart video when page is loaded
@@ -81,10 +86,25 @@
             }
         }
 
+        if (extendedWatch) {
+            const countdownButton = document.querySelector('.stream-countdown-button')
+            if (countdownButton) {
+                log('found stream-countdown-button, clicking')
+                countdownButton.click()
+            }
+            // watch for still watching element and restart
+            const stillWatchingEl = document.querySelector('.timeout-panel-button-container')
+            if (stillWatchingEl) {
+                log('found timeout button, clicking')
+                stillWatchingEl.click()
+            }
+        }
+
         if (attempts >= retryMaxAttempts) {
             warn('gave up, max attempts reached. Increase "maxAttempts" or set "resetScript" to true, then manually reload the page.')
             return
         }
+
         // check for smart tag error
         var errorEl = document.querySelector('.smart-tag-error-panel-content')
         if (errorEl) {
