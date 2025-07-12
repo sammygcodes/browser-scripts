@@ -1,18 +1,28 @@
+/* BBLF Enhancer CSS v2 (2025) */
 
-/* you can uncomment display:none or remove this to hide cam switcher */
+/* you can uncomment display:none to hide cam switcher */
 .skin-multi-cam-plugin {
   /* display: none; */
 }
 
-/* you can comment display:none or remove this to show sidebar/chat */
+/* you can comment display:none to show sidebar/chat */
 .skin-multi-cam-plugin-sub-sections-elements {
   display: none;
+}
+
+/* you can uncomment left: -100% to hide the loading spinner */
+.multi-cam-plugin-loading-animation-shift {
+  margin-left: calc(12%);
+  margin-bottom: calc(8%);
+  /* left: -100%; */
 }
 
 /* you can uncomment display:none to hide video overlay controls */
 .metadata-manager, .skin-metadata-manager-content, .rating-manager, .product-placement-manager, .controls-backplane, .skip-button-wrapper, .controls-brand-logo-wrapper, .controls-manager, .gate-manager, .ad-info-manager, .tool-tip-manager, .modal-manager, .top-menu-backplane, .top-menu-manager {
   /* display: none; */
 }
+
+/* don't change anything else, unless you know what you are doing */
 
 /* hide disclaimer */
 .disclaimer {
@@ -26,16 +36,20 @@
 }
 
 /* various format page */
+
+/* fill the page */
 html, body {
   margin-top: 0;
   min-height: unset;
   height: 100%;
 }
 
+/* remove P+ header and footer */
 header, footer {
   display: none;
 }
 
+/* force main and player to take up whole page */
 main {
   display: block;
   position: absolute;
@@ -66,10 +80,3 @@ main {
   width: 100%;
   height: 100%;
 }
-
-.skin-multi-cam-plugin {
-  
-  width: 50%;
-  left: 25%;
-}
-

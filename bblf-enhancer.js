@@ -1,17 +1,21 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.2
-// @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, and remap fullscreen button to only show video.
+// @version      1.3
+// @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, add hotkeys, show video scrubber, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=paramountplus.com
 // @grant        GM_log
 
-// 1.2
-//  - add extendedWatch
-
 // ==/UserScript==
+/*
+v 1.3 (2025)
+ - now need to click start button to use (this forces user interaction with the page to ensure js executes)
+ - add removeControls (hides P+ video controls and enables scrubber on video)
+v 1.2
+ - add extendedWatch
+*/
 
 (function() {
     'use strict';
@@ -26,6 +30,8 @@
 
     // force switch to quad cam on page load
     const autoQuadCam = true
+    // remove P+ video controls and show built-in video controls allowing scrubbing
+    const removeControls = true
     // hide chat and video thumbs on fullscreen
     const fullscreenVideoOnly = true
     // reload the page when an error is encountered
@@ -51,19 +57,43 @@
     var camNum = 1
     // current attempts, will fail after retryMaxAttemps reached
     var attempts = 0
+    // whether the fullscreen button has been remapped
     var fsButtonMapped = false
+    // whether the P+ player controls have been removed
+    var controlsRemoved = false
 
     if (localStorage.getItem('bblf_video_monitor_attempts')) attempts = (resetScript) ? 0 : parseInt(localStorage.getItem('bblf_video_monitor_attempts'))
 
-    setInterval(checkVideo, monitorInterval)
+    log('waiting for user to click start button')
 
-    if (enableHotkeys) {
-        document.onkeydown = function(e) {
-            for (var i = 0; i < hotkeys.length; i++) {
-                const hotkey = hotkeys[i].key.toString()
-                if (e.key === hotkey || e.code === hotkey) hotkeys[i].action()
+    injectStartButton()
+
+    function injectStartButton() {
+        log('injected start button')
+        var startEl = document.createElement('input')
+        startEl.id = 'bblf-enhance'
+        startEl.type = 'button'
+        startEl.value = 'Start BBLF Enhancer'
+        startEl.style = 'position: relative; left: calc(50% - 80px); width: 160px; height: 48px; z-index: 99999; cursor: pointer;'
+        startEl.addEventListener('click', function() {
+            log('starting bblf enhancer')
+            // remove start button
+            startEl.parentNode.removeChild(startEl)
+            // enable hotkeys
+            if (enableHotkeys) {
+                document.onkeydown = function(e) {
+                    for (var i = 0; i < hotkeys.length; i++) {
+                        const hotkey = hotkeys[i].key.toString()
+                        if (e.key === hotkey || e.code === hotkey) hotkeys[i].action()
+                    }
+                }
             }
-        }
+            // start watching video
+            setInterval(checkVideo, monitorInterval)
+        })
+        var mcplayerEl = document.getElementById('mcplayer')
+        mcplayerEl.parentNode.insertBefore(startEl, mcplayerEl.nextSibling)
+        mcplayerEl.appendChild(startEl)
     }
 
     function checkVideo() {
@@ -118,7 +148,7 @@
         } else {
             var startPanelEl = document.querySelector('.start-panel.show')
             if (startPanelEl) {
-                warn('start panel is showing, clicking to start video.')
+                warn('start panel is showing, click to start video.')
                 var clickEl = document.querySelector('.start-panel-click-overlay')
                 clickEl.click()
             } else {
@@ -144,6 +174,18 @@
                             camNum = 5
                         } else {
                             log('video is ready and playing.')
+                            if (removeControls && !controlsRemoved) {
+                                log('removing P+ controls')
+                                controlsRemoved = true
+                                // remove the player elements
+                                const playerEls = ['.controls-backplane', '.controls-manager', '.top-menu-backplane']
+                                for (var i = 0; i < playerEls.length; i++) {
+                                    var el = document.querySelector(playerEls[i])
+                                    el.parentNode.removeChild(el)
+                                }
+                                // enable built-in video controls allowing scrubbing
+                            }
+                            if (controlsRemoved) videoEl.controls = true
                         }
                     }
                     attempts = 0
