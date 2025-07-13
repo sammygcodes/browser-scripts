@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.31
 // @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, add hotkeys, show video scrubber, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
@@ -10,7 +10,9 @@
 
 // ==/UserScript==
 /*
-v 1.3 (2025)
+v 1.31 (2025)
+ - add qualityFix option for those who were quality limited
+v 1.3 
  - now need to click start button to use (this forces user interaction with the page to ensure js executes)
  - add removeControls (hides P+ video controls and enables scrubber on video)
 v 1.2
@@ -28,6 +30,9 @@ v 1.2
         { key: 5, action: function() { switchCam(5) } }
     ]
 
+    // force allow up to 1080p resolution
+    const qualityFix = true
+    const preferredQuality = '1080p' // one of 1080p, 720p, 540p, 360p, 288p, 216p
     // force switch to quad cam on page load
     const autoQuadCam = true
     // remove P+ video controls and show built-in video controls allowing scrubbing
@@ -61,39 +66,57 @@ v 1.2
     var fsButtonMapped = false
     // whether the P+ player controls have been removed
     var controlsRemoved = false
+    // whether quality fix has been added
+    var qualityFixed = false
 
     if (localStorage.getItem('bblf_video_monitor_attempts')) attempts = (resetScript) ? 0 : parseInt(localStorage.getItem('bblf_video_monitor_attempts'))
 
-    log('waiting for user to click start button')
-
+    // NOTE: you might try just running startup instead of injectStartButton, there is a freezeup for me
+    // startup()
     injectStartButton()
 
     function injectStartButton() {
-        log('injected start button')
         var startEl = document.createElement('input')
         startEl.id = 'bblf-enhance'
         startEl.type = 'button'
         startEl.value = 'Start BBLF Enhancer'
         startEl.style = 'position: relative; left: calc(50% - 80px); width: 160px; height: 48px; z-index: 99999; cursor: pointer;'
-        startEl.addEventListener('click', function() {
-            log('starting bblf enhancer')
-            // remove start button
-            startEl.parentNode.removeChild(startEl)
-            // enable hotkeys
-            if (enableHotkeys) {
-                document.onkeydown = function(e) {
-                    for (var i = 0; i < hotkeys.length; i++) {
-                        const hotkey = hotkeys[i].key.toString()
-                        if (e.key === hotkey || e.code === hotkey) hotkeys[i].action()
-                    }
-                }
-            }
-            // start watching video
-            setInterval(checkVideo, monitorInterval)
-        })
+        startEl.addEventListener('click', startup)
         var mcplayerEl = document.getElementById('mcplayer')
         mcplayerEl.parentNode.insertBefore(startEl, mcplayerEl.nextSibling)
         mcplayerEl.appendChild(startEl)
+        log('waiting for user to click start button')
+    }
+
+    function startup() {
+        log('starting bblf enhancer')
+
+        // remove start button
+        const startEl = document.getElementById('bblf-enhance')
+        if (startEl) startEl.parentNode.removeChild(startEl)
+
+        // enable hotkeys
+        if (enableHotkeys) {
+            document.onkeydown = function(e) {
+                for (var i = 0; i < hotkeys.length; i++) {
+                    const hotkey = hotkeys[i].key.toString()
+                    if (e.key === hotkey || e.code === hotkey) hotkeys[i].action()
+                }
+            }
+        }
+        // start watching video
+        setInterval(checkVideo, monitorInterval)
+    }
+
+    function updateQualities() {
+        const video = document.querySelectorAll('video')[1]
+        const player = video.player
+        const playback = video.player.getAdapter('playback')
+        playback.maxHeight = 1080
+        playback.maxBitrate = 5000000
+        playback.refreshQualities()
+        player.qualityCategory = preferredQuality
+        qualityFixed = true
     }
 
     function checkVideo() {
@@ -156,7 +179,6 @@ v 1.2
                 if (videoEl) {
                     if (videoEl.paused) {
                         if (forcePlay) {
-                            // TODO not working (maybe user has to click)
                             // attempt to unpause video
                             info('video is available and paused, trying to force play (manual user intervention may be required)')
                             const el = document.getElementById('mcplayer')
@@ -174,6 +196,7 @@ v 1.2
                             camNum = 5
                         } else {
                             log('video is ready and playing.')
+                            if (qualityFix && !qualityFixed) updateQualities()
                             if (removeControls && !controlsRemoved) {
                                 log('removing P+ controls')
                                 controlsRemoved = true
@@ -202,6 +225,7 @@ v 1.2
         const el = document.querySelector('.multi-cam-plugin-thumb-player-container .index-item[data-camid="' + num + '"]')
         if (el) {
             el.click()
+            qualityFixed = false
         } else {
             warn('could not find camera element ' + num + ', unable to change')
         }
