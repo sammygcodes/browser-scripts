@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.31
+// @version      1.32
 // @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, add hotkeys, show video scrubber, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
@@ -10,9 +10,12 @@
 
 // ==/UserScript==
 /*
+v 1.32 (2025)
+ - thumbs fix - hotkey cam switch shouldn't get stuck on thumbs
+ - player quality is now checked (i.e quality fix will apply when clicking thumbs)
 v 1.31 (2025)
  - add qualityFix option for those who were quality limited
-v 1.3 
+v 1.3
  - now need to click start button to use (this forces user interaction with the page to ensure js executes)
  - add removeControls (hides P+ video controls and enables scrubber on video)
 v 1.2
@@ -112,11 +115,13 @@ v 1.2
         const video = document.querySelectorAll('video')[1]
         const player = video.player
         const playback = video.player.getAdapter('playback')
-        playback.maxHeight = 1080
-        playback.maxBitrate = 5000000
-        playback.refreshQualities()
-        player.qualityCategory = preferredQuality
-        qualityFixed = true
+		if (player && playback && player.qualityCategory != preferredQuality || !qualityFixed) {
+			playback.maxHeight = 1080
+			playback.maxBitrate = 5000000
+			playback.refreshQualities()
+			player.qualityCategory = preferredQuality
+			qualityFixed = true
+		}
     }
 
     function checkVideo() {
@@ -196,7 +201,7 @@ v 1.2
                             camNum = 5
                         } else {
                             log('video is ready and playing.')
-                            if (qualityFix && !qualityFixed) updateQualities()
+                            if (qualityFix) updateQualities()
                             if (removeControls && !controlsRemoved) {
                                 log('removing P+ controls')
                                 controlsRemoved = true
@@ -222,6 +227,7 @@ v 1.2
     }
 
     function switchCam(num) {
+        if (document.activeElement) document.activeElement.blur()
         const el = document.querySelector('.multi-cam-plugin-thumb-player-container .index-item[data-camid="' + num + '"]')
         if (el) {
             el.click()
