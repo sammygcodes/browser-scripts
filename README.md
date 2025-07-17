@@ -28,7 +28,7 @@ Any of these features are optional by changing the settings in the script.
 
 2. In the Tampermonkey dashboard, click Utilities, and copy the following url into the Import from URL box:
 
-    `https://raw.githubusercontent.com/liquid8d/browser-scripts/refs/heads/main/bblf-enhancer.js`
+    `https://raw.githubusercontent.com/sammygcodes/browser-scripts/refs/heads/main/bblf-enhancer.js`
 
 3. Click the Install button, then Install again.
 
