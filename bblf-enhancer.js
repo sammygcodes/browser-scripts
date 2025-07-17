@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BBLF Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      1.32
+// @version      1.33
 // @description  Monitor for issues on the live feed page, reloading or starting video when necessary. Can autoload quad cam, add hotkeys, show video scrubber, and remap fullscreen button to only show video.
 // @author       liquid8d
 // @match        https://www.paramountplus.com/shows/big_brother/live_feed/stream/
@@ -10,6 +10,8 @@
 
 // ==/UserScript==
 /*
+v 1.33 (2025)
+ - added left/right audio balance hotkeys
 v 1.32 (2025)
  - thumbs fix - hotkey cam switch shouldn't get stuck on thumbs
  - player quality is now checked (i.e quality fix will apply when clicking thumbs)
@@ -30,7 +32,10 @@ v 1.2
         { key: 2, action: function() { switchCam(2) } },
         { key: 3, action: function() { switchCam(3) } },
         { key: 4, action: function() { switchCam(4) } },
-        { key: 5, action: function() { switchCam(5) } }
+        { key: 5, action: function() { switchCam(5) } },
+        { key: 'q', action: function() { adjustChannel('left') } },
+        { key: 'w', action: function() { adjustChannel('none') } },
+        { key: 'e', action: function() { adjustChannel('right') } }
     ]
 
     // force allow up to 1080p resolution
@@ -72,6 +77,12 @@ v 1.2
     // whether quality fix has been added
     var qualityFixed = false
 
+    // audio control variables
+    const audioCtx = new (window.AudioContext)();
+    let domNodes = [];
+    let audioNodes = [];
+    let dir = 'none';
+
     if (localStorage.getItem('bblf_video_monitor_attempts')) attempts = (resetScript) ? 0 : parseInt(localStorage.getItem('bblf_video_monitor_attempts'))
 
     // NOTE: you might try just running startup instead of injectStartButton, there is a freezeup for me
@@ -108,7 +119,12 @@ v 1.2
             }
         }
         // start watching video
-        setInterval(checkVideo, monitorInterval)
+        setInterval(() => {
+            checkVideo();
+            document.querySelectorAll('video').forEach((item) => {
+                addNode(item);
+            })
+        }, monitorInterval);
     }
 
     function updateQualities() {
@@ -122,6 +138,7 @@ v 1.2
 			player.qualityCategory = preferredQuality
 			qualityFixed = true
 		}
+        audioCtx.resume();
     }
 
     function checkVideo() {
@@ -235,6 +252,47 @@ v 1.2
         } else {
             warn('could not find camera element ' + num + ', unable to change')
         }
+    }
+
+    function addNode(node) {
+        if (!domNodes.includes(node)) {
+            domNodes.push(node);
+            log('DOM node added to list');
+            hookUpWebAudio(node);
+            log('hooked up web audio node');
+        }
+    }
+
+    function hookUpWebAudio(node) {
+        let audioNode = {};
+        audioNode.source = audioCtx.createMediaElementSource(node);
+        audioNode.splitter = audioCtx.createChannelSplitter(2);
+        audioNode.source.connect(audioNode.splitter, 0, 0);
+        audioNode.gainLeft = audioCtx.createGain();
+        audioNode.gainRight = audioCtx.createGain();
+        audioNode.splitter.connect(audioNode.gainLeft, 0);
+        audioNode.splitter.connect(audioNode.gainRight, 1);
+        audioNode.gainLeft.connect(audioCtx.destination, 0);
+        audioNode.gainRight.connect(audioCtx.destination, 0);
+        audioNodes.push(audioNode);
+    }
+
+    function adjustChannel(dir) {
+        audioNodes.forEach((audioNode) => {
+            if (dir === 'none') {
+            audioNode.gainLeft.gain.value = 1;
+            audioNode.gainRight.gain.value = 1;
+            log('audio balance reset');
+            } else if (dir === 'left') {
+                audioNode.gainLeft.gain.value = 1;
+                audioNode.gainRight.gain.value = 0;
+                log('audio balance left');
+            } else {
+                audioNode.gainLeft.gain.value = 0;
+                audioNode.gainRight.gain.value = 1;
+                log('audio balance right');
+            }
+        });
     }
 
     function log(msg) { console.log('BBLF Enhancer: (' + attempts + ') ' + msg) }
